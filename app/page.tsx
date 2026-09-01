@@ -67,6 +67,27 @@ export default function Home() {
     return () => clearInterval(t);
   }, []);
 
+  // 보스 추가/수정 모달이 열려있는 동안만 히스토리 1개를 쌓아서, 뒤로가기를
+  // 누르면 앱이 꺼지는 대신 모달만 닫히게 한다. 모달이 버튼(저장/취소)으로
+  // 닫힌 경우엔 쌓아뒀던 히스토리를 다시 back()으로 정리해 남기지 않는다.
+  const modalOpen = editing !== undefined;
+  useEffect(() => {
+    if (!modalOpen) return;
+
+    let closedByBackButton = false;
+    history.pushState({ zeusModalGuard: true }, "");
+
+    function handlePopState() {
+      closedByBackButton = true;
+      setEditing(undefined);
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      if (!closedByBackButton) history.back(); // 우리가 쌓아둔 더미 정리
+    };
+  }, [modalOpen]);
 
   useEffect(() => {
     (async () => {
