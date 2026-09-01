@@ -346,27 +346,44 @@ function BossCard({
     }
   }
 
-  function endDrag() {
+  // 브라우저 네이티브 click 이벤트는 preventDefault/포인터 캡처 등과
+  // 얽혀서 미묘하게 씹히는 경우가 있었어서, 탭/롱프레스/스와이프 판정을
+  // 전부 포인터 이벤트만으로 직접 처리한다 (click에 의존하지 않음).
+  function onPointerUp(e: React.PointerEvent) {
+    if (!startRef.current) return; // 버튼 자체를 누른 press(전파 차단됨) — 여기서 할 일 없음
+
+    const wasLongPress = longPressFiredRef.current;
+    const wasHorizontalDrag = axisRef.current === "h";
+    const wasAnyDrag = draggedRef.current;
+
+    longPressFiredRef.current = false;
+    clearLongPress();
+    startRef.current = null;
+    axisRef.current = null;
+    setDragging(false);
+
+    if (wasHorizontalDrag) {
+      setX((cur) => (cur < -SWIPE_REVEAL / 2 ? -SWIPE_REVEAL : 0));
+      return;
+    }
+    if (wasLongPress || wasAnyDrag) return;
+    if (x !== 0) {
+      setX(0); // 열려있는 상태에서 탭하면 닫기만 함
+      return;
+    }
+    if (boss.type === "interval") onMarkSpawned(boss);
+  }
+
+  function onPointerCancel() {
     clearLongPress();
     if (axisRef.current === "h") {
       setX((cur) => (cur < -SWIPE_REVEAL / 2 ? -SWIPE_REVEAL : 0));
     }
     startRef.current = null;
     axisRef.current = null;
+    draggedRef.current = false;
+    longPressFiredRef.current = false;
     setDragging(false);
-  }
-
-  function handleCardClick() {
-    if (longPressFiredRef.current) {
-      longPressFiredRef.current = false; // 길게 눌러서 이미 수정 화면을 열었으면 탭 동작은 무시
-      return;
-    }
-    if (x !== 0) {
-      setX(0); // 열려있는 상태에서 탭하면 닫기만 함
-      return;
-    }
-    if (draggedRef.current) return; // 살짝 끌리다 만 것 — 탭으로 취급하지 않음
-    if (boss.type === "interval") onMarkSpawned(boss);
   }
 
   const notifyOn = boss.notifyEnabled !== false;
@@ -380,10 +397,10 @@ function BossCard({
         style={{ transform: `translateX(${x}px)` }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
       >
-        <div className={`boss-card urgency-${urgency}${longPressing ? " long-pressing" : ""}`} onClick={handleCardClick}>
+        <div className={`boss-card urgency-${urgency}${longPressing ? " long-pressing" : ""}`}>
           <span className="press-fill" aria-hidden="true" />
           <div className="boss-main">
             <div className="boss-name-row">
