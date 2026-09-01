@@ -37,7 +37,7 @@ export interface BossData {
 }
 
 export const DEFAULT_BOSS_DATA: BossData = {
-  settings: { defaultLeads: [10, 5] },
+  settings: { defaultLeads: [10] },
   bosses: [],
 };
 
