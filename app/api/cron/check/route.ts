@@ -7,7 +7,7 @@ import {
   setNotifyState,
   removeSubscription,
 } from "@/lib/kv";
-import { nextOccurrence, effectiveLeads, fmtAbs, fmtLead } from "@/lib/boss-logic";
+import { nextOccurrence, effectiveLeads, fmtAbs } from "@/lib/boss-logic";
 
 // Every boss time in this app ("times": ["13:25"]) is a KST wall-clock
 // time, entered/displayed in a browser that's always in Korea. But this
@@ -102,7 +102,12 @@ export async function GET(req: Request) {
 
   const deadEndpoints = new Set<string>();
   for (const item of due) {
-    const label = fmtLead(item.lead);
+    // 설정해둔 lead(5, 3, ...)를 그대로 찍지 않고, 실제 발송 시점에 남은
+    // 시간을 다시 계산해서 보여준다 — 외부 크론(cron-job.org)이 정확히
+    // 매분 0초에 도는 게 아니라 1~2분 정도 밀릴 수 있어서, "5분 전"이라
+    // 찍혀도 실제로는 3분밖에 안 남았을 수 있기 때문.
+    const actualMinutesLeft = Math.round((item.next.getTime() - now.getTime()) / 60000);
+    const label = actualMinutesLeft > 0 ? `${actualMinutesLeft}분 전` : "등장!";
     const payload = JSON.stringify({
       title: `⚔️ ${item.name} ${label}`,
       body: `${fmtAbs(item.next)} 젠 예정${item.memo ? " · " + item.memo : ""}`,

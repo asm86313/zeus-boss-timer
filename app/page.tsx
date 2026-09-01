@@ -47,7 +47,7 @@ export default function Home() {
   const [pushState, setPushState] = useState<PushState>("checking");
   const [pushBusy, setPushBusy] = useState(false);
   const [editing, setEditing] = useState<Boss | null | undefined>(undefined); // undefined = form closed
-  const [defaultLeadsText, setDefaultLeadsText] = useState("5, 1, 0");
+  const [defaultLeadsText, setDefaultLeadsText] = useState("10, 5");
 
   useEffect(() => {
     fetch("/api/bosses")
@@ -197,7 +197,7 @@ export default function Home() {
         <input
           id="defaultLeads"
           type="text"
-          placeholder="5, 1, 0"
+          placeholder="10, 5"
           value={defaultLeadsText}
           onChange={(e) => setDefaultLeadsText(e.target.value)}
           onBlur={(e) => updateDefaultLeads(e.target.value)}
