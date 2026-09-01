@@ -274,10 +274,12 @@ function BossCard({
   const [dragging, setDragging] = useState(false);
   const startRef = useRef<{ x: number; y: number; baseX: number } | null>(null);
   const axisRef = useRef<"h" | "v" | null>(null);
+  const draggedRef = useRef(false); // 실제로 움직였는지 — 살짝 끌었다 놓은 걸 탭으로 오인하지 않기 위함
 
   function onPointerDown(e: React.PointerEvent) {
     startRef.current = { x: e.clientX, y: e.clientY, baseX: x };
     axisRef.current = null;
+    draggedRef.current = false;
     setDragging(true);
   }
 
@@ -288,6 +290,7 @@ function BossCard({
     if (axisRef.current === null) {
       if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
         axisRef.current = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
+        draggedRef.current = true;
       }
     }
     if (axisRef.current === "h") {
@@ -305,6 +308,15 @@ function BossCard({
     setDragging(false);
   }
 
+  function handleCardClick() {
+    if (x !== 0) {
+      setX(0); // 열려있는 상태에서 탭하면 닫기만 함
+      return;
+    }
+    if (draggedRef.current) return; // 살짝 끌리다 만 것 — 탭으로 취급하지 않음
+    if (boss.type === "interval") onMarkSpawned(boss);
+  }
+
   const notifyOn = boss.notifyEnabled !== false;
   const leads = effectiveLeads(boss, defaultLeads);
   const urgency = notifyOn ? urgencyOf(leads, next, now) : "none";
@@ -319,12 +331,7 @@ function BossCard({
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
       >
-        <div
-          className={`boss-card urgency-${urgency}`}
-          onClick={() => {
-            if (x !== 0) setX(0); // 열려있는 상태에서 카드 탭하면 닫기만 함
-          }}
-        >
+        <div className={`boss-card urgency-${urgency}`} onClick={handleCardClick}>
           <div className="boss-main">
             <div className="boss-name-row">
               <span className="boss-name">{boss.name}</span>
@@ -333,24 +340,29 @@ function BossCard({
             {boss.memo && <div className="boss-memo">{boss.memo}</div>}
             <div className="boss-meta">
               {fmtAbs(next)} · {notifyOn ? `${fmtLeads(leads)} 알림` : "알림 꺼짐"}
+              {boss.type === "interval" && " · 탭하면 잡음 체크"}
             </div>
           </div>
           <div className="boss-countdown">{next ? fmtCountdown(next.getTime() - now.getTime()) : "-"}</div>
           <div className="boss-actions">
             <button
               className="btn small"
-              onClick={() => onToggleNotify(boss)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleNotify(boss);
+              }}
               aria-label={notifyOn ? "알림 끄기" : "알림 켜기"}
               title={notifyOn ? "알림 끄기" : "알림 켜기"}
             >
               {notifyOn ? "🔔" : "🔕"}
             </button>
-            {boss.type === "interval" && (
-              <button className="btn small" onClick={() => onMarkSpawned(boss)}>
-                잡음 체크
-              </button>
-            )}
-            <button className="btn small" onClick={() => onEdit(boss)}>
+            <button
+              className="btn small"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(boss);
+              }}
+            >
               수정
             </button>
           </div>
