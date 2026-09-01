@@ -207,11 +207,12 @@ export default function Home() {
         </div>
         <div className="push-btn">
           <button
-            className="btn"
+            className="btn push-toggle-btn"
             disabled={pushState === "unsupported" || pushState === "checking" || pushBusy}
             onClick={togglePush}
           >
-            {pushState === "subscribed" ? "🔔 알림 켜짐" : "🔕 알림 켜기"}
+            <span className="notify-icon">{pushState === "subscribed" ? "🔔" : "🔕"}</span>
+            <span className="notify-label">{pushState === "subscribed" ? "켜짐" : "꺼짐"}</span>
           </button>
           {pushState === "unsupported" && <span className="hint">이 브라우저는 미지원</span>}
         </div>

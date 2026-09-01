@@ -72,6 +72,27 @@ select {
   gap: 2px;
 }
 
+.push-toggle-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 64px;
+  height: 56px;
+  padding: 0;
+}
+
+.push-toggle-btn .notify-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.push-toggle-btn .notify-label {
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .btn {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
