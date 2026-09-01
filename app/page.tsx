@@ -285,9 +285,13 @@ function CatchModal({
   /** "지금부터 82분 후 출현" -> 처치가 몇 분 전이었는지로 환산해서 적용. */
   function handleUntilChange(text: string) {
     setUntilText(text);
+    if (text.trim() === "") {
+      setAgoMinutes(0); // 지워서 비우면 "지금"으로 되돌아감 (이전 값이 남아있지 않게)
+      return;
+    }
     const mins = Number(text);
     const interval = boss.intervalMinutes ?? 0;
-    if (text.trim() === "" || !Number.isFinite(mins) || mins < 0 || interval <= 0) return;
+    if (!Number.isFinite(mins) || mins < 0 || interval <= 0) return;
     setAgoMinutes(Math.max(0, interval - mins));
   }
 
