@@ -70,11 +70,17 @@ export default function Home() {
   }, []);
 
   // 안드로이드 뒤로가기를 누르면 확인 없이 바로 앱이 꺼지는 걸 막는다:
-  // 더미 히스토리를 하나 쌓아두고, 뒤로가기(popstate)가 오면 수정창이
+  // 더미 히스토리를 쌓아두고, 뒤로가기(popstate)가 오면 수정창이
   // 열려있으면 그것만 닫고, 아니면 정말 종료할지 확인창을 띄운다.
   // 취소하면 더미 히스토리를 다시 쌓아서 다음 뒤로가기도 가로챌 수 있게 함.
+  // (기기/브라우저에 따라 우리 JS가 실행되기 전에 히스토리 항목이 이미
+  // 몇 개 쌓여있는 경우가 있어서, 하나만 쌓으면 첫 뒤로가기 몇 번은
+  // 그 항목들을 그냥 통과해버려 확인창이 바로 안 뜰 수 있다. 여유 있게
+  // 여러 개를 쌓아 첫 뒤로가기부터 확실히 걸리도록 한다.)
   useEffect(() => {
-    history.pushState({ zeusExitGuard: true }, "");
+    for (let i = 0; i < 20; i++) {
+      history.pushState({ zeusExitGuard: true }, "");
+    }
 
     function handlePopState() {
       if (editingRef.current !== undefined) {
