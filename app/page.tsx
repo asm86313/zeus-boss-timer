@@ -247,7 +247,7 @@ export default function Home() {
   );
 }
 
-const SWIPE_REVEAL = 152; // 수정(76) + 삭제(76)
+const SWIPE_REVEAL = 228; // 알림(76) + 수정(76) + 삭제(76)
 
 /** 왼쪽으로 스와이프하면 오른쪽에 삭제 칸이 나오는 보스 카드. (오른쪽 끝에 항상
  * 있는 액션 버튼들이 스와이프 중에도 안 가려지도록, 가려지는 건 보스 이름 쪽.) */
@@ -366,24 +366,19 @@ function BossCard({
             {boss.memo && <div className="boss-memo">{boss.memo}</div>}
             <div className="boss-meta">
               {fmtAbs(next)} · {notifyOn ? `${fmtLeads(leads)} 알림` : "알림 꺼짐"}
-              {boss.type === "interval" && " · 탭: 잡음 체크"} · 밀면 수정/삭제
+              {boss.type === "interval" && " · 탭: 잡음 체크"} · 밀면 알림/수정/삭제
             </div>
           </div>
           <div className="boss-countdown">{next ? fmtCountdown(next.getTime() - now.getTime()) : "-"}</div>
-          <div className="boss-actions">
-            <button
-              className="btn notify-toggle-btn"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleNotify(boss);
-              }}
-              aria-label={notifyOn ? "알림 끄기" : "알림 켜기"}
-              title={notifyOn ? "알림 끄기" : "알림 켜기"}
-            >
-              {notifyOn ? "🔔" : "🔕"}
-            </button>
-          </div>
+        </div>
+        <div
+          className="swipe-action-btn notify"
+          onClick={() => {
+            setX(0);
+            onToggleNotify(boss);
+          }}
+        >
+          {notifyOn ? "🔔" : "🔕"}
         </div>
         <div
           className="swipe-action-btn edit"
