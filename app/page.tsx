@@ -328,10 +328,12 @@ function CatchModal({
             {pad(nextSpawnAt.getHours())}:{pad(nextSpawnAt.getMinutes())}
           </div>
           <div className="catch-ago">{untilMinutes === 0 ? "곧" : `${untilMinutes}분 후`}</div>
-          <div className="catch-sub">
-            처치 시각 {pad(killedAt.getHours())}:{pad(killedAt.getMinutes())}
-            {agoMinutes > 0 && ` (${agoMinutes}분 전)`}
-          </div>
+          {untilText.trim() === "" && (
+            <div className="catch-sub">
+              처치 시각 {pad(killedAt.getHours())}:{pad(killedAt.getMinutes())}
+              {agoMinutes > 0 && ` (${agoMinutes}분 전)`}
+            </div>
+          )}
         </div>
 
         <div className="catch-adjust">
