@@ -302,6 +302,19 @@ function BossForm({
   const [lastSpawnAt, setLastSpawnAt] = useState(
     toLocalInputValue(initial?.lastSpawnAt ? new Date(initial.lastSpawnAt) : new Date())
   );
+  const [minutesUntil, setMinutesUntil] = useState("");
+
+  /** "지금부터 82분 후 출현" -> 처치 시각을 거꾸로 계산해서 자동으로 채워준다. */
+  function handleMinutesUntilChange(text: string) {
+    setMinutesUntil(text);
+    const mins = Number(text);
+    const interval = Number(intervalMinutes);
+    if (text.trim() === "" || !Number.isFinite(mins) || mins < 0 || !Number.isFinite(interval) || interval <= 0) {
+      return;
+    }
+    const killedAt = new Date(Date.now() + mins * 60000 - interval * 60000);
+    setLastSpawnAt(toLocalInputValue(killedAt));
+  }
 
   function toggleDay(d: number) {
     setDays((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d].sort()));
@@ -416,12 +429,26 @@ function BossForm({
               </div>
             </div>
             <div className="field">
+              <label htmlFor="minutesUntil">지금부터 몇 분 후 출현? (입력하면 아래 처치 시각 자동 계산)</label>
+              <input
+                id="minutesUntil"
+                type="number"
+                min={0}
+                placeholder="예: 82"
+                value={minutesUntil}
+                onChange={(e) => handleMinutesUntilChange(e.target.value)}
+              />
+            </div>
+            <div className="field">
               <label htmlFor="lastSpawnAt">마지막 젠(처치) 시각</label>
               <input
                 id="lastSpawnAt"
                 type="datetime-local"
                 value={lastSpawnAt}
-                onChange={(e) => setLastSpawnAt(e.target.value)}
+                onChange={(e) => {
+                  setLastSpawnAt(e.target.value);
+                  setMinutesUntil(""); // 수동으로 고치면 자동계산 입력은 무효화
+                }}
               />
             </div>
           </>
