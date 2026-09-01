@@ -20,6 +20,7 @@ process.env.TZ = "Asia/Seoul";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const preferredRegion = "icn1";
 
 // Called on a schedule (see an external scheduler like cron-job.org,
 // since Vercel Hobby only allows daily native crons) to check every

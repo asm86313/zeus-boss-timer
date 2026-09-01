@@ -3,6 +3,7 @@ import { removeSubscription } from "@/lib/kv";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const preferredRegion = "icn1";
 
 export async function POST(req: Request) {
   let body: { endpoint?: string };
