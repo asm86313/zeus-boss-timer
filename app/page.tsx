@@ -290,10 +290,9 @@ function BossCard({
   }
 
   function onPointerDown(e: React.PointerEvent) {
-    // 마우스로 누른 채 옆으로 움직이면 브라우저가 기본적으로 텍스트를
-    // 드래그 선택해버려서 스와이프 추적이 끊기므로 막는다. (CSS
-    // user-select:none이 기본 방어선이고 이건 추가 안전장치.)
-    if (e.pointerType === "mouse") e.preventDefault();
+    // (텍스트 드래그 선택 방지는 CSS user-select:none으로 처리 — 여기서
+    // preventDefault()를 부르면 마우스의 후속 click 이벤트 자체가 같이
+    // 씹혀서 탭-잡음체크가 안 먹는 부작용이 있었음.)
     startRef.current = { x: e.clientX, y: e.clientY, baseX: x };
     axisRef.current = null;
     draggedRef.current = false;
