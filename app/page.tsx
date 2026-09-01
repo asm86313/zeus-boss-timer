@@ -47,6 +47,7 @@ export default function Home() {
   const [pushState, setPushState] = useState<PushState>("checking");
   const [pushBusy, setPushBusy] = useState(false);
   const [editing, setEditing] = useState<Boss | null | undefined>(undefined); // undefined = form closed
+  const [catching, setCatching] = useState<Boss | null>(null); // null = 잡음체크 모달 닫힘
   const [defaultLeadsText, setDefaultLeadsText] = useState("10, 5");
 
   useEffect(() => {
@@ -70,7 +71,7 @@ export default function Home() {
   // 보스 추가/수정 모달이 열려있는 동안만 히스토리 1개를 쌓아서, 뒤로가기를
   // 누르면 앱이 꺼지는 대신 모달만 닫히게 한다. 모달이 버튼(저장/취소)으로
   // 닫힌 경우엔 쌓아뒀던 히스토리를 다시 back()으로 정리해 남기지 않는다.
-  const modalOpen = editing !== undefined;
+  const modalOpen = editing !== undefined || catching !== null;
   useEffect(() => {
     if (!modalOpen) return;
 
@@ -80,6 +81,7 @@ export default function Home() {
     function handlePopState() {
       closedByBackButton = true;
       setEditing(undefined);
+      setCatching(null);
     }
 
     window.addEventListener("popstate", handlePopState);
@@ -128,29 +130,10 @@ export default function Home() {
     persist({ ...data, bosses: data.bosses.filter((b) => b.id !== id) });
   }
 
-  /** "잡음" 체크: 기본은 지금 시각, 필요하면 실제로 잡은 시각(HH:MM)을 입력받아 그 시각부터 다음 젠을 계산한다. */
-  function markSpawned(boss: Boss) {
-    const now = new Date();
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const nowHHMM = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    const input = prompt(`처치 시각 (HH:MM, 그냥 확인 = 지금 ${nowHHMM})`, nowHHMM);
-    if (input === null) return; // 취소
-
-    const trimmed = input.trim();
-    let killedAt = now;
-    if (trimmed !== "" && trimmed !== nowHHMM) {
-      const m = /^(\d{1,2}):(\d{2})$/.exec(trimmed);
-      if (!m) {
-        alert("시간 형식이 올바르지 않습니다. 예: 14:30");
-        return;
-      }
-      killedAt = new Date(now);
-      killedAt.setHours(Number(m[1]), Number(m[2]), 0, 0);
-      // 입력한 시각이 아직 안 왔다면(미래) 어제 그 시각에 잡은 것으로 간주
-      if (killedAt.getTime() > now.getTime()) killedAt.setDate(killedAt.getDate() - 1);
-    }
-
-    upsertBoss({ ...boss, lastSpawnAt: killedAt.toISOString() });
+  function confirmCatch(killedAt: Date) {
+    if (!catching) return;
+    upsertBoss({ ...catching, lastSpawnAt: killedAt.toISOString() });
+    setCatching(null);
   }
 
   function toggleNotify(boss: Boss) {
@@ -246,7 +229,7 @@ export default function Home() {
               now={now}
               defaultLeads={data.settings.defaultLeads}
               onToggleNotify={toggleNotify}
-              onMarkSpawned={markSpawned}
+              onMarkSpawned={setCatching}
               onEdit={setEditing}
               onDelete={deleteBoss}
             />
@@ -266,6 +249,69 @@ export default function Home() {
           onSubmit={upsertBoss}
         />
       )}
+
+      {catching && (
+        <CatchModal boss={catching} onCancel={() => setCatching(null)} onConfirm={confirmCatch} />
+      )}
+    </div>
+  );
+}
+
+/** "잡음 체크" 시각 입력 모달. 기본은 지금 시각, 필요하면 실제로 잡은
+ * 시각을 골라서 그 시각부터 다음 젠을 계산하게 한다. */
+function CatchModal({
+  boss,
+  onCancel,
+  onConfirm,
+}: {
+  boss: Boss;
+  onCancel: () => void;
+  onConfirm: (killedAt: Date) => void;
+}) {
+  const [time, setTime] = useState(() => {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  });
+
+  function handleConfirm(e: React.FormEvent) {
+    e.preventDefault();
+    const m = /^(\d{1,2}):(\d{2})$/.exec(time.trim());
+    if (!m) {
+      alert("시간 형식이 올바르지 않습니다.");
+      return;
+    }
+    const now = new Date();
+    const killedAt = new Date(now);
+    killedAt.setHours(Number(m[1]), Number(m[2]), 0, 0);
+    // 입력한 시각이 아직 안 왔다면(미래) 어제 그 시각에 잡은 것으로 간주
+    if (killedAt.getTime() > now.getTime()) killedAt.setDate(killedAt.getDate() - 1);
+    onConfirm(killedAt);
+  }
+
+  return (
+    <div className="modal-overlay">
+      <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={handleConfirm}>
+        <h2>{boss.name} 잡음 체크</h2>
+        <div className="field">
+          <label htmlFor="catchTime">처치 시각</label>
+          <input
+            id="catchTime"
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            autoFocus
+          />
+        </div>
+        <div className="modal-actions">
+          <button type="submit" className="btn primary">
+            확인
+          </button>
+          <button type="button" className="btn" onClick={onCancel}>
+            취소
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

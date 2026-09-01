@@ -25,6 +25,7 @@ body {
 body {
   background: var(--bg);
   color: var(--text);
+  color-scheme: dark; /* 시간/날짜 입력의 네이티브 아이콘·달력이 어두운 배경에서도 보이게 */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
   min-height: 100vh;
   -webkit-tap-highlight-color: transparent;
@@ -394,6 +395,7 @@ select {
 .field input[type="text"],
 .field input[type="number"],
 .field input[type="datetime-local"],
+.field input[type="time"],
 .field select,
 .field textarea {
   width: 100%;
