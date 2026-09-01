@@ -47,6 +47,8 @@ export default function Home() {
   const [pushState, setPushState] = useState<PushState>("checking");
   const [pushBusy, setPushBusy] = useState(false);
   const [editing, setEditing] = useState<Boss | null | undefined>(undefined); // undefined = form closed
+  const editingRef = useRef(editing);
+  editingRef.current = editing;
   const [defaultLeadsText, setDefaultLeadsText] = useState("10, 5");
 
   useEffect(() => {
@@ -65,6 +67,29 @@ export default function Home() {
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
+  }, []);
+
+  // 안드로이드 뒤로가기를 누르면 확인 없이 바로 앱이 꺼지는 걸 막는다:
+  // 더미 히스토리를 하나 쌓아두고, 뒤로가기(popstate)가 오면 수정창이
+  // 열려있으면 그것만 닫고, 아니면 정말 종료할지 확인창을 띄운다.
+  // 취소하면 더미 히스토리를 다시 쌓아서 다음 뒤로가기도 가로챌 수 있게 함.
+  useEffect(() => {
+    history.pushState({ zeusExitGuard: true }, "");
+
+    function handlePopState() {
+      if (editingRef.current !== undefined) {
+        setEditing(undefined);
+        history.pushState({ zeusExitGuard: true }, "");
+        return;
+      }
+      const leave = confirm("앱을 종료하시겠습니까?");
+      if (!leave) {
+        history.pushState({ zeusExitGuard: true }, "");
+      }
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   useEffect(() => {
