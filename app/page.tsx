@@ -311,8 +311,12 @@ function BossCard({
     if (!startRef.current) return;
     const dx = e.clientX - startRef.current.x;
     const dy = e.clientY - startRef.current.y;
+    // 마우스는 버튼을 누른 채 3초간 완전히 정지해 있기 어렵고(손떨림 정도의
+    // 미세한 움직임도 발생) 터치보다 훨씬 잘 흔들리므로, 롱프레스가 그
+    // 흔들림 때문에 스와이프로 오인되지 않도록 임계값을 넉넉하게 잡는다.
+    const threshold = e.pointerType === "mouse" ? 24 : 8;
     if (axisRef.current === null) {
-      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+      if (Math.abs(dx) > threshold || Math.abs(dy) > threshold) {
         axisRef.current = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
         draggedRef.current = true;
         clearLongPress(); // 움직이기 시작하면 길게 누르기는 취소 (스와이프/스크롤로 간주)
