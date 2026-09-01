@@ -168,7 +168,38 @@ select {
   gap: 10px;
 }
 
+.boss-swipe {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.boss-swipe-track {
+  display: flex;
+  touch-action: pan-y; /* let the browser keep handling vertical scroll natively */
+  transition: transform 0.2s ease;
+}
+
+.boss-swipe-track.dragging {
+  transition: none;
+}
+
+.swipe-delete-panel {
+  flex: 0 0 88px;
+  background: var(--danger);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+}
+
 .boss-card {
+  flex: 0 0 100%;
+  min-width: 0;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-left: 4px solid var(--none);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Boss, BossData, BossType } from "@/lib/types";
 import { DEFAULT_BOSS_DATA } from "@/lib/types";
 import {
@@ -215,47 +215,19 @@ export default function Home() {
         <div className="empty">등록된 보스가 없습니다. 오른쪽 아래 + 버튼으로 추가하세요.</div>
       ) : (
         <div className="boss-list">
-          {sorted.map(({ boss, next }) => {
-            const notifyOn = boss.notifyEnabled !== false;
-            const leads = effectiveLeads(boss, data.settings.defaultLeads);
-            const urgency = notifyOn ? urgencyOf(leads, next, now) : "none";
-            return (
-              <div key={boss.id} className={`boss-card urgency-${urgency}`}>
-                <div className="boss-main">
-                  <div className="boss-name-row">
-                    <span className="boss-name">{boss.name}</span>
-                    <span className="boss-type">{typeLabel(boss)}</span>
-                  </div>
-                  {boss.memo && <div className="boss-memo">{boss.memo}</div>}
-                  <div className="boss-meta">
-                    {fmtAbs(next)} · {notifyOn ? `${fmtLeads(leads)} 알림` : "알림 꺼짐"}
-                  </div>
-                </div>
-                <div className="boss-countdown">{next ? fmtCountdown(next.getTime() - now.getTime()) : "-"}</div>
-                <div className="boss-actions">
-                  <button
-                    className="btn small"
-                    onClick={() => toggleNotify(boss)}
-                    aria-label={notifyOn ? "알림 끄기" : "알림 켜기"}
-                    title={notifyOn ? "알림 끄기" : "알림 켜기"}
-                  >
-                    {notifyOn ? "🔔" : "🔕"}
-                  </button>
-                  {boss.type === "interval" && (
-                    <button className="btn small" onClick={() => markSpawned(boss)}>
-                      잡음 체크
-                    </button>
-                  )}
-                  <button className="btn small" onClick={() => setEditing(boss)}>
-                    수정
-                  </button>
-                  <button className="btn small danger" onClick={() => deleteBoss(boss.id)}>
-                    삭제
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+          {sorted.map(({ boss, next }) => (
+            <BossCard
+              key={boss.id}
+              boss={boss}
+              next={next}
+              now={now}
+              defaultLeads={data.settings.defaultLeads}
+              onToggleNotify={toggleNotify}
+              onMarkSpawned={markSpawned}
+              onEdit={setEditing}
+              onDelete={deleteBoss}
+            />
+          ))}
         </div>
       )}
 
@@ -271,6 +243,122 @@ export default function Home() {
           onSubmit={upsertBoss}
         />
       )}
+    </div>
+  );
+}
+
+const SWIPE_REVEAL = 88;
+
+/** 왼쪽으로 스와이프하면 오른쪽에 삭제 칸이 나오는 보스 카드. (오른쪽 끝에 항상
+ * 있는 액션 버튼들이 스와이프 중에도 안 가려지도록, 가려지는 건 보스 이름 쪽.) */
+function BossCard({
+  boss,
+  next,
+  now,
+  defaultLeads,
+  onToggleNotify,
+  onMarkSpawned,
+  onEdit,
+  onDelete,
+}: {
+  boss: Boss;
+  next: Date | null;
+  now: Date;
+  defaultLeads: number[];
+  onToggleNotify: (boss: Boss) => void;
+  onMarkSpawned: (boss: Boss) => void;
+  onEdit: (boss: Boss) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [x, setX] = useState(0); // 0(닫힘) ~ -SWIPE_REVEAL(열림)
+  const [dragging, setDragging] = useState(false);
+  const startRef = useRef<{ x: number; y: number; baseX: number } | null>(null);
+  const axisRef = useRef<"h" | "v" | null>(null);
+
+  function onPointerDown(e: React.PointerEvent) {
+    startRef.current = { x: e.clientX, y: e.clientY, baseX: x };
+    axisRef.current = null;
+    setDragging(true);
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    if (!startRef.current) return;
+    const dx = e.clientX - startRef.current.x;
+    const dy = e.clientY - startRef.current.y;
+    if (axisRef.current === null) {
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+        axisRef.current = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
+      }
+    }
+    if (axisRef.current === "h") {
+      e.currentTarget.setPointerCapture(e.pointerId);
+      setX(Math.min(0, Math.max(startRef.current.baseX + dx, -SWIPE_REVEAL)));
+    }
+  }
+
+  function endDrag() {
+    if (axisRef.current === "h") {
+      setX((cur) => (cur < -SWIPE_REVEAL / 2 ? -SWIPE_REVEAL : 0));
+    }
+    startRef.current = null;
+    axisRef.current = null;
+    setDragging(false);
+  }
+
+  const notifyOn = boss.notifyEnabled !== false;
+  const leads = effectiveLeads(boss, defaultLeads);
+  const urgency = notifyOn ? urgencyOf(leads, next, now) : "none";
+
+  return (
+    <div className="boss-swipe">
+      <div
+        className={`boss-swipe-track${dragging ? " dragging" : ""}`}
+        style={{ transform: `translateX(${x}px)` }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+      >
+        <div
+          className={`boss-card urgency-${urgency}`}
+          onClick={() => {
+            if (x !== 0) setX(0); // 열려있는 상태에서 카드 탭하면 닫기만 함
+          }}
+        >
+          <div className="boss-main">
+            <div className="boss-name-row">
+              <span className="boss-name">{boss.name}</span>
+              <span className="boss-type">{typeLabel(boss)}</span>
+            </div>
+            {boss.memo && <div className="boss-memo">{boss.memo}</div>}
+            <div className="boss-meta">
+              {fmtAbs(next)} · {notifyOn ? `${fmtLeads(leads)} 알림` : "알림 꺼짐"}
+            </div>
+          </div>
+          <div className="boss-countdown">{next ? fmtCountdown(next.getTime() - now.getTime()) : "-"}</div>
+          <div className="boss-actions">
+            <button
+              className="btn small"
+              onClick={() => onToggleNotify(boss)}
+              aria-label={notifyOn ? "알림 끄기" : "알림 켜기"}
+              title={notifyOn ? "알림 끄기" : "알림 켜기"}
+            >
+              {notifyOn ? "🔔" : "🔕"}
+            </button>
+            {boss.type === "interval" && (
+              <button className="btn small" onClick={() => onMarkSpawned(boss)}>
+                잡음 체크
+              </button>
+            )}
+            <button className="btn small" onClick={() => onEdit(boss)}>
+              수정
+            </button>
+          </div>
+        </div>
+        <div className="swipe-delete-panel" onClick={() => onDelete(boss.id)}>
+          삭제
+        </div>
+      </div>
     </div>
   );
 }
