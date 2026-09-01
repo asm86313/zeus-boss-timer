@@ -198,6 +198,8 @@ select {
 }
 
 .boss-card {
+  position: relative;
+  overflow: hidden;
   flex: 0 0 100%;
   min-width: 0;
   background: var(--bg-elevated);
@@ -209,6 +211,29 @@ select {
   align-items: center;
   gap: 12px;
   cursor: pointer;
+  -webkit-touch-callout: none;
+}
+
+.press-fill {
+  position: absolute;
+  inset: 0;
+  width: 0%;
+  background: var(--gold);
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.boss-card.long-pressing .press-fill {
+  animation: press-fill-grow 3s linear forwards;
+}
+
+@keyframes press-fill-grow {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
 }
 
 .boss-card.urgency-danger {

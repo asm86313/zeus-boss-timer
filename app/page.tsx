@@ -275,12 +275,36 @@ function BossCard({
   const startRef = useRef<{ x: number; y: number; baseX: number } | null>(null);
   const axisRef = useRef<"h" | "v" | null>(null);
   const draggedRef = useRef(false); // 실제로 움직였는지 — 살짝 끌었다 놓은 걸 탭으로 오인하지 않기 위함
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFiredRef = useRef(false);
+  const [longPressing, setLongPressing] = useState(false); // 시각적 진행바 표시용
+
+  const LONG_PRESS_MS = 3000;
+
+  function clearLongPress() {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    setLongPressing(false);
+  }
 
   function onPointerDown(e: React.PointerEvent) {
     startRef.current = { x: e.clientX, y: e.clientY, baseX: x };
     axisRef.current = null;
     draggedRef.current = false;
+    longPressFiredRef.current = false;
     setDragging(true);
+
+    if (x === 0) {
+      setLongPressing(true);
+      longPressTimerRef.current = setTimeout(() => {
+        longPressFiredRef.current = true;
+        longPressTimerRef.current = null;
+        setLongPressing(false);
+        onEdit(boss);
+      }, LONG_PRESS_MS);
+    }
   }
 
   function onPointerMove(e: React.PointerEvent) {
@@ -291,6 +315,7 @@ function BossCard({
       if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
         axisRef.current = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
         draggedRef.current = true;
+        clearLongPress(); // 움직이기 시작하면 길게 누르기는 취소 (스와이프/스크롤로 간주)
       }
     }
     if (axisRef.current === "h") {
@@ -300,6 +325,7 @@ function BossCard({
   }
 
   function endDrag() {
+    clearLongPress();
     if (axisRef.current === "h") {
       setX((cur) => (cur < -SWIPE_REVEAL / 2 ? -SWIPE_REVEAL : 0));
     }
@@ -309,6 +335,10 @@ function BossCard({
   }
 
   function handleCardClick() {
+    if (longPressFiredRef.current) {
+      longPressFiredRef.current = false; // 길게 눌러서 이미 수정 화면을 열었으면 탭 동작은 무시
+      return;
+    }
     if (x !== 0) {
       setX(0); // 열려있는 상태에서 탭하면 닫기만 함
       return;
@@ -331,7 +361,8 @@ function BossCard({
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
       >
-        <div className={`boss-card urgency-${urgency}`} onClick={handleCardClick}>
+        <div className={`boss-card urgency-${urgency}${longPressing ? " long-pressing" : ""}`} onClick={handleCardClick}>
+          <span className="press-fill" aria-hidden="true" />
           <div className="boss-main">
             <div className="boss-name-row">
               <span className="boss-name">{boss.name}</span>
@@ -340,13 +371,14 @@ function BossCard({
             {boss.memo && <div className="boss-memo">{boss.memo}</div>}
             <div className="boss-meta">
               {fmtAbs(next)} · {notifyOn ? `${fmtLeads(leads)} 알림` : "알림 꺼짐"}
-              {boss.type === "interval" && " · 탭하면 잡음 체크"}
+              {boss.type === "interval" && " · 탭: 잡음 체크"} · 길게 누르면 수정
             </div>
           </div>
           <div className="boss-countdown">{next ? fmtCountdown(next.getTime() - now.getTime()) : "-"}</div>
           <div className="boss-actions">
             <button
               className="btn small"
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleNotify(boss);
@@ -355,15 +387,6 @@ function BossCard({
               title={notifyOn ? "알림 끄기" : "알림 켜기"}
             >
               {notifyOn ? "🔔" : "🔕"}
-            </button>
-            <button
-              className="btn small"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(boss);
-              }}
-            >
-              수정
             </button>
           </div>
         </div>
