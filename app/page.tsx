@@ -295,6 +295,11 @@ function BossCard({
     draggedRef.current = false;
     longPressFiredRef.current = false;
     setDragging(true);
+    // 처음부터 캡처해둔다 — 안 그러면 롱프레스 도중 수정 모달이 뜬 뒤
+    // 손을 뗄 때 pointerup이 카드가 아니라 위에 뜬 모달로 가버려서
+    // startRef가 안 지워지고, 그 상태로 마우스만 움직여도(버튼 안 누른
+    // 채) 예전 시작점 기준으로 스와이프가 계산되는 버그가 생겼었다.
+    e.currentTarget.setPointerCapture(e.pointerId);
 
     if (x === 0) {
       setLongPressing(true);
@@ -302,6 +307,11 @@ function BossCard({
         longPressFiredRef.current = true;
         longPressTimerRef.current = null;
         setLongPressing(false);
+        // 모달이 뜨면 이 카드는 더 이상 포인터 이벤트를 받을 일이 없으니
+        // 드래그 상태를 여기서 미리 확실히 정리해둔다.
+        startRef.current = null;
+        axisRef.current = null;
+        setDragging(false);
         onEdit(boss);
       }, LONG_PRESS_MS);
     }
@@ -309,6 +319,11 @@ function BossCard({
 
   function onPointerMove(e: React.PointerEvent) {
     if (!startRef.current) return;
+    // 버튼이 안 눌린 상태(호버)로 들어오는 마우스 move는 전부 무시.
+    if (e.pointerType === "mouse" && e.buttons === 0) {
+      startRef.current = null;
+      return;
+    }
     const dx = e.clientX - startRef.current.x;
     const dy = e.clientY - startRef.current.y;
     // 마우스는 버튼을 누른 채 3초간 완전히 정지해 있기 어렵고(손떨림 정도의
@@ -381,7 +396,7 @@ function BossCard({
           <div className="boss-countdown">{next ? fmtCountdown(next.getTime() - now.getTime()) : "-"}</div>
           <div className="boss-actions">
             <button
-              className="btn small"
+              className="btn notify-toggle-btn"
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();

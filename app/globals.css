@@ -313,14 +313,20 @@ select {
 
 .boss-actions {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 84px;
+  align-items: center;
   flex-shrink: 0;
 }
 
-.boss-actions .btn {
-  width: 100%;
+.notify-toggle-btn {
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .modal-overlay {
