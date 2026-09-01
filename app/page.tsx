@@ -442,6 +442,7 @@ function BossCard({
         </div>
         <div
           className="swipe-action-btn notify"
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={() => {
             setX(0);
             onToggleNotify(boss);
@@ -452,6 +453,7 @@ function BossCard({
         </div>
         <div
           className="swipe-action-btn edit"
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={() => {
             setX(0);
             onEdit(boss);
@@ -459,7 +461,11 @@ function BossCard({
         >
           수정
         </div>
-        <div className="swipe-action-btn delete" onClick={() => onDelete(boss.id)}>
+        <div
+          className="swipe-action-btn delete"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => onDelete(boss.id)}
+        >
           삭제
         </div>
       </div>
