@@ -378,7 +378,8 @@ function BossCard({
             onToggleNotify(boss);
           }}
         >
-          {notifyOn ? "🔔" : "🔕"}
+          <span className="notify-icon">{notifyOn ? "🔔" : "🔕"}</span>
+          <span className="notify-label">{notifyOn ? "켜짐" : "꺼짐"}</span>
         </div>
         <div
           className="swipe-action-btn edit"
