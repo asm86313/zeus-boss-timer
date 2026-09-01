@@ -308,7 +308,7 @@ function CatchModal({
   return (
     <div className="modal-overlay">
       <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={handleConfirm}>
-        <h2>{boss.name} 잡음 체크</h2>
+        <h2>{boss.name}</h2>
 
         <div className="field">
           <label htmlFor="catchUntil">지금부터 몇 분 후 출현? (알면 이걸로)</label>
