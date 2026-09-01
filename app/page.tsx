@@ -455,7 +455,6 @@ function BossCard({
             {boss.memo && <div className="boss-memo">{boss.memo}</div>}
             <div className="boss-meta">
               {fmtAbs(next)} · {notifyOn ? `${fmtLeads(leads)} 알림` : "알림 꺼짐"}
-              {boss.type === "interval" && " · 탭: 잡음 체크"} · 밀면 알림/수정/삭제
             </div>
           </div>
           <div className="boss-countdown">{next ? fmtCountdown(next.getTime() - now.getTime()) : "-"}</div>
