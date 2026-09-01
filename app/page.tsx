@@ -290,6 +290,10 @@ function BossCard({
   }
 
   function onPointerDown(e: React.PointerEvent) {
+    // 마우스로 누른 채 옆으로 움직이면 브라우저가 기본적으로 텍스트를
+    // 드래그 선택해버려서 스와이프 추적이 끊기므로 막는다. (CSS
+    // user-select:none이 기본 방어선이고 이건 추가 안전장치.)
+    if (e.pointerType === "mouse") e.preventDefault();
     startRef.current = { x: e.clientX, y: e.clientY, baseX: x };
     axisRef.current = null;
     draggedRef.current = false;
