@@ -606,11 +606,11 @@ function BossForm({
         </div>
 
         <div className="modal-actions">
-          <button type="button" className="btn" onClick={onCancel}>
-            취소
-          </button>
           <button type="submit" className="btn primary">
             저장
+          </button>
+          <button type="button" className="btn" onClick={onCancel}>
+            취소
           </button>
         </div>
       </form>
