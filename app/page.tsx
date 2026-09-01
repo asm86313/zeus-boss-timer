@@ -277,6 +277,10 @@ function CatchModal({
     return d;
   }, [agoMinutes]);
 
+  const interval = boss.intervalMinutes ?? 0;
+  const nextSpawnAt = useMemo(() => new Date(killedAt.getTime() + interval * 60000), [killedAt, interval]);
+  const untilMinutes = Math.max(0, Math.round((nextSpawnAt.getTime() - Date.now()) / 60000));
+
   function adjust(delta: number) {
     setAgoMinutes((m) => Math.max(0, m + delta));
     setUntilText(""); // 직접 조절하면 "몇분후" 입력은 무효화
@@ -290,7 +294,6 @@ function CatchModal({
       return;
     }
     const mins = Number(text);
-    const interval = boss.intervalMinutes ?? 0;
     if (!Number.isFinite(mins) || mins < 0 || interval <= 0) return;
     setAgoMinutes(Math.max(0, interval - mins));
   }
@@ -320,10 +323,15 @@ function CatchModal({
         </div>
 
         <div className="catch-display">
+          <div className="catch-next-label">다음 출현</div>
           <div className="catch-time">
-            {pad(killedAt.getHours())}:{pad(killedAt.getMinutes())}
+            {pad(nextSpawnAt.getHours())}:{pad(nextSpawnAt.getMinutes())}
           </div>
-          <div className="catch-ago">{agoMinutes === 0 ? "지금" : `${agoMinutes}분 전`}</div>
+          <div className="catch-ago">{untilMinutes === 0 ? "곧" : `${untilMinutes}분 후`}</div>
+          <div className="catch-sub">
+            처치 시각 {pad(killedAt.getHours())}:{pad(killedAt.getMinutes())}
+            {agoMinutes > 0 && ` (${agoMinutes}분 전)`}
+          </div>
         </div>
 
         <div className="catch-adjust">

@@ -386,6 +386,17 @@ select {
   margin: 4px 0 16px;
 }
 
+.catch-next-label {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.catch-sub {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+
 .catch-time {
   font-size: 34px;
   font-weight: 700;
