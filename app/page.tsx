@@ -131,6 +131,10 @@ export default function Home() {
     upsertBoss({ ...boss, lastSpawnAt: killedAt.toISOString() });
   }
 
+  function toggleNotify(boss: Boss) {
+    upsertBoss({ ...boss, notifyEnabled: boss.notifyEnabled === false });
+  }
+
   function updateDefaultLeads(text: string) {
     if (!data) return;
     const leads = parseLeadsText(text);
@@ -212,8 +216,9 @@ export default function Home() {
       ) : (
         <div className="boss-list">
           {sorted.map(({ boss, next }) => {
+            const notifyOn = boss.notifyEnabled !== false;
             const leads = effectiveLeads(boss, data.settings.defaultLeads);
-            const urgency = urgencyOf(leads, next, now);
+            const urgency = notifyOn ? urgencyOf(leads, next, now) : "none";
             return (
               <div key={boss.id} className={`boss-card urgency-${urgency}`}>
                 <div className="boss-main">
@@ -223,11 +228,19 @@ export default function Home() {
                   </div>
                   {boss.memo && <div className="boss-memo">{boss.memo}</div>}
                   <div className="boss-meta">
-                    {fmtAbs(next)} · {fmtLeads(leads)} 알림
+                    {fmtAbs(next)} · {notifyOn ? `${fmtLeads(leads)} 알림` : "알림 꺼짐"}
                   </div>
                 </div>
                 <div className="boss-countdown">{next ? fmtCountdown(next.getTime() - now.getTime()) : "-"}</div>
                 <div className="boss-actions">
+                  <button
+                    className="btn small"
+                    onClick={() => toggleNotify(boss)}
+                    aria-label={notifyOn ? "알림 끄기" : "알림 켜기"}
+                    title={notifyOn ? "알림 끄기" : "알림 켜기"}
+                  >
+                    {notifyOn ? "🔔" : "🔕"}
+                  </button>
                   {boss.type === "interval" && (
                     <button className="btn small" onClick={() => markSpawned(boss)}>
                       잡음 체크
@@ -277,6 +290,7 @@ function BossForm({
   const [name, setName] = useState(initial?.name ?? "");
   const [type, setType] = useState<BossType>(initial?.type ?? "fixed");
   const [memo, setMemo] = useState(initial?.memo ?? "");
+  const [notifyEnabled, setNotifyEnabled] = useState(initial?.notifyEnabled !== false);
   const [leadMinutesText, setLeadMinutesText] = useState(
     initial?.leadMinutes && initial.leadMinutes.length ? initial.leadMinutes.join(", ") : ""
   );
@@ -308,6 +322,7 @@ function BossForm({
       type,
       memo: memo.trim() || undefined,
       leadMinutes: parsedLeads.length ? parsedLeads : null,
+      notifyEnabled,
     };
 
     if (type === "fixed") {
@@ -339,7 +354,7 @@ function BossForm({
   }
 
   return (
-    <div className="modal-overlay" onClick={onCancel}>
+    <div className="modal-overlay">
       <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
         <h2>{isNew ? "보스 추가" : "보스 수정"}</h2>
 
@@ -413,6 +428,17 @@ function BossForm({
         )}
 
         <div className="field">
+          <label className="check-label">
+            <input
+              type="checkbox"
+              checked={notifyEnabled}
+              onChange={(e) => setNotifyEnabled(e.target.checked)}
+            />
+            이 보스 알림 사용
+          </label>
+        </div>
+
+        <div className="field">
           <label htmlFor="lead">알림 시점 (분 전, 쉼표로 여러 개, 0=등장 시, 비우면 기본값 사용)</label>
           <input
             id="lead"
@@ -420,6 +446,7 @@ function BossForm({
             placeholder={`기본값 (${defaultLeads.join(", ")})`}
             value={leadMinutesText}
             onChange={(e) => setLeadMinutesText(e.target.value)}
+            disabled={!notifyEnabled}
           />
         </div>
 

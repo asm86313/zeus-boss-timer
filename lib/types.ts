@@ -10,6 +10,8 @@ export interface Boss {
    * null/undefined/empty = use settings.defaultLeads
    */
   leadMinutes?: number[] | null;
+  /** false = 이 보스는 푸시 알림을 보내지 않음. undefined/true = 알림 사용(기본값) */
+  notifyEnabled?: boolean;
 
   // type === "fixed"
   /** "HH:MM" 24h, repeats daily unless `days` narrows it */

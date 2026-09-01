@@ -71,6 +71,7 @@ export async function GET(req: Request) {
   const lookback = new Date(now.getTime() - 3 * 60_000);
 
   for (const boss of data.bosses) {
+    if (boss.notifyEnabled === false) continue;
     const next = nextOccurrence(boss, lookback);
     if (!next) continue;
     const occKey = next.toISOString();
