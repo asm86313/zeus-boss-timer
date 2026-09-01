@@ -258,6 +258,12 @@ select {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 84px;
+  flex-shrink: 0;
+}
+
+.boss-actions .btn {
+  width: 100%;
 }
 
 .modal-overlay {
