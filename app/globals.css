@@ -381,6 +381,37 @@ select {
   font-size: 16px;
 }
 
+.catch-display {
+  text-align: center;
+  margin: 4px 0 16px;
+}
+
+.catch-time {
+  font-size: 34px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+}
+
+.catch-ago {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.catch-adjust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.catch-adjust .btn {
+  flex: 1 1 calc(25% - 5px);
+  padding: 12px 4px;
+  font-size: 13px;
+}
+
 .field {
   margin-bottom: 14px;
 }

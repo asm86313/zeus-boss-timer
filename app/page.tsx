@@ -268,41 +268,61 @@ function CatchModal({
   onCancel: () => void;
   onConfirm: (killedAt: Date) => void;
 }) {
-  const [time, setTime] = useState(() => {
-    const now = new Date();
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-  });
+  const [agoMinutes, setAgoMinutes] = useState(0); // 0 = 지금
+
+  const killedAt = useMemo(() => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - agoMinutes, 0, 0);
+    return d;
+  }, [agoMinutes]);
+
+  function adjust(delta: number) {
+    setAgoMinutes((m) => Math.max(0, m + delta));
+  }
 
   function handleConfirm(e: React.FormEvent) {
     e.preventDefault();
-    const m = /^(\d{1,2}):(\d{2})$/.exec(time.trim());
-    if (!m) {
-      alert("시간 형식이 올바르지 않습니다.");
-      return;
-    }
-    const now = new Date();
-    const killedAt = new Date(now);
-    killedAt.setHours(Number(m[1]), Number(m[2]), 0, 0);
-    // 입력한 시각이 아직 안 왔다면(미래) 어제 그 시각에 잡은 것으로 간주
-    if (killedAt.getTime() > now.getTime()) killedAt.setDate(killedAt.getDate() - 1);
     onConfirm(killedAt);
   }
+
+  const pad = (n: number) => String(n).padStart(2, "0");
 
   return (
     <div className="modal-overlay">
       <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={handleConfirm}>
         <h2>{boss.name} 잡음 체크</h2>
-        <div className="field">
-          <label htmlFor="catchTime">처치 시각</label>
-          <input
-            id="catchTime"
-            type="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            autoFocus
-          />
+
+        <div className="catch-display">
+          <div className="catch-time">
+            {pad(killedAt.getHours())}:{pad(killedAt.getMinutes())}
+          </div>
+          <div className="catch-ago">{agoMinutes === 0 ? "지금" : `${agoMinutes}분 전`}</div>
         </div>
+
+        <div className="catch-adjust">
+          <button type="button" className="btn" onClick={() => adjust(10)}>
+            -10분
+          </button>
+          <button type="button" className="btn" onClick={() => adjust(5)}>
+            -5분
+          </button>
+          <button type="button" className="btn" onClick={() => adjust(1)}>
+            -1분
+          </button>
+          <button type="button" className="btn" onClick={() => setAgoMinutes(0)}>
+            지금
+          </button>
+          <button type="button" className="btn" onClick={() => adjust(-1)} disabled={agoMinutes < 1}>
+            +1분
+          </button>
+          <button type="button" className="btn" onClick={() => adjust(-5)} disabled={agoMinutes < 5}>
+            +5분
+          </button>
+          <button type="button" className="btn" onClick={() => adjust(-10)} disabled={agoMinutes < 10}>
+            +10분
+          </button>
+        </div>
+
         <div className="modal-actions">
           <button type="submit" className="btn primary">
             확인
