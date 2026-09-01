@@ -269,6 +269,7 @@ function CatchModal({
   onConfirm: (killedAt: Date) => void;
 }) {
   const [agoMinutes, setAgoMinutes] = useState(0); // 0 = 지금
+  const [untilText, setUntilText] = useState("");
 
   const killedAt = useMemo(() => {
     const d = new Date();
@@ -278,6 +279,16 @@ function CatchModal({
 
   function adjust(delta: number) {
     setAgoMinutes((m) => Math.max(0, m + delta));
+    setUntilText(""); // 직접 조절하면 "몇분후" 입력은 무효화
+  }
+
+  /** "지금부터 82분 후 출현" -> 처치가 몇 분 전이었는지로 환산해서 적용. */
+  function handleUntilChange(text: string) {
+    setUntilText(text);
+    const mins = Number(text);
+    const interval = boss.intervalMinutes ?? 0;
+    if (text.trim() === "" || !Number.isFinite(mins) || mins < 0 || interval <= 0) return;
+    setAgoMinutes(Math.max(0, interval - mins));
   }
 
   function handleConfirm(e: React.FormEvent) {
@@ -291,6 +302,18 @@ function CatchModal({
     <div className="modal-overlay">
       <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={handleConfirm}>
         <h2>{boss.name} 잡음 체크</h2>
+
+        <div className="field">
+          <label htmlFor="catchUntil">지금부터 몇 분 후 출현? (알면 이걸로)</label>
+          <input
+            id="catchUntil"
+            type="number"
+            min={0}
+            placeholder="예: 82"
+            value={untilText}
+            onChange={(e) => handleUntilChange(e.target.value)}
+          />
+        </div>
 
         <div className="catch-display">
           <div className="catch-time">
@@ -309,7 +332,14 @@ function CatchModal({
           <button type="button" className="btn" onClick={() => adjust(1)}>
             -1분
           </button>
-          <button type="button" className="btn" onClick={() => setAgoMinutes(0)}>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              setAgoMinutes(0);
+              setUntilText("");
+            }}
+          >
             지금
           </button>
           <button type="button" className="btn" onClick={() => adjust(-1)} disabled={agoMinutes < 1}>
@@ -519,19 +549,6 @@ function BossForm({
   const [lastSpawnAt, setLastSpawnAt] = useState(
     toLocalInputValue(initial?.lastSpawnAt ? new Date(initial.lastSpawnAt) : new Date())
   );
-  const [minutesUntil, setMinutesUntil] = useState("");
-
-  /** "지금부터 82분 후 출현" -> 처치 시각을 거꾸로 계산해서 자동으로 채워준다. */
-  function handleMinutesUntilChange(text: string) {
-    setMinutesUntil(text);
-    const mins = Number(text);
-    const interval = Number(intervalMinutes);
-    if (text.trim() === "" || !Number.isFinite(mins) || mins < 0 || !Number.isFinite(interval) || interval <= 0) {
-      return;
-    }
-    const killedAt = new Date(Date.now() + mins * 60000 - interval * 60000);
-    setLastSpawnAt(toLocalInputValue(killedAt));
-  }
 
   function toggleDay(d: number) {
     setDays((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d].sort()));
@@ -646,26 +663,12 @@ function BossForm({
               </div>
             </div>
             <div className="field">
-              <label htmlFor="minutesUntil">지금부터 몇 분 후 출현? (입력하면 아래 처치 시각 자동 계산)</label>
-              <input
-                id="minutesUntil"
-                type="number"
-                min={0}
-                placeholder="예: 82"
-                value={minutesUntil}
-                onChange={(e) => handleMinutesUntilChange(e.target.value)}
-              />
-            </div>
-            <div className="field">
               <label htmlFor="lastSpawnAt">마지막 젠(처치) 시각</label>
               <input
                 id="lastSpawnAt"
                 type="datetime-local"
                 value={lastSpawnAt}
-                onChange={(e) => {
-                  setLastSpawnAt(e.target.value);
-                  setMinutesUntil(""); // 수동으로 고치면 자동계산 입력은 무효화
-                }}
+                onChange={(e) => setLastSpawnAt(e.target.value)}
               />
             </div>
           </>
