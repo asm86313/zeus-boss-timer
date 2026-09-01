@@ -9,15 +9,25 @@ import {
 } from "@/lib/kv";
 import { nextOccurrence, effectiveLeads, fmtAbs, fmtLead } from "@/lib/boss-logic";
 
+// Every boss time in this app ("times": ["13:25"]) is a KST wall-clock
+// time, entered/displayed in a browser that's always in Korea. But this
+// route runs on Vercel's servers, whose local timezone is NOT Korea (UTC
+// by default) — and boss-logic.ts builds occurrences with local-time
+// Date getters/constructors, so without this it silently computes
+// against the server's timezone instead of KST. Force it here, once, so
+// the server agrees with the browser.
+process.env.TZ = "Asia/Seoul";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Called on a schedule (see vercel.json) to check every boss's next spawn
-// and push a notification once each configured lead offset (e.g. 5분 전,
-// 1분 전, 등장 시) enters its window. notifyState remembers, per
-// boss+offset, the ISO timestamp of the occurrence already alerted for —
-// so re-running within the same window, or after the offset already
-// fired for this occurrence, is a no-op.
+// Called on a schedule (see an external scheduler like cron-job.org,
+// since Vercel Hobby only allows daily native crons) to check every
+// boss's next spawn and push a notification once each configured lead
+// offset (e.g. 5분 전, 1분 전, 등장 시) enters its window. notifyState
+// remembers, per boss+offset, the ISO timestamp of the occurrence
+// already alerted for — so re-running within the same window, or after
+// the offset already fired for this occurrence, is a no-op.
 
 function vapidReady() {
   return Boolean(
