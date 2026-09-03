@@ -48,7 +48,7 @@ export default function Home() {
   const [pushBusy, setPushBusy] = useState(false);
   const [editing, setEditing] = useState<Boss | null | undefined>(undefined); // undefined = form closed
   const [catching, setCatching] = useState<Boss | null>(null); // null = 잡음체크 모달 닫힘
-  const [defaultLeadsText, setDefaultLeadsText] = useState("10");
+  const [defaultLeadsText, setDefaultLeadsText] = useState("10, 5");
 
   useEffect(() => {
     fetch("/api/bosses")
@@ -203,7 +203,7 @@ export default function Home() {
         <input
           id="defaultLeads"
           type="text"
-          placeholder="10"
+          placeholder="10, 5"
           value={defaultLeadsText}
           onChange={(e) => setDefaultLeadsText(e.target.value)}
           onBlur={(e) => updateDefaultLeads(e.target.value)}

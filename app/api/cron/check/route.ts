@@ -48,6 +48,25 @@ export async function GET(req: Request) {
   if (!vapidReady()) {
     return NextResponse.json({ error: "VAPID keys not configured" }, { status: 500 });
   }
+
+  try {
+    return await runCheck();
+  } catch (err: unknown) {
+    // 이전에 이 라우트가 에러를 냈을 때 Vercel 로그엔 아무 상세 정보도 안
+    // 남아서(경고 메시지 한 줄뿐) 원인 파악이 불가능했다. 무슨 단계에서
+    // 왜 실패했는지 다음엔 바로 알 수 있도록 최대한 자세히 남긴다.
+    const e = err as { message?: string; stack?: string; name?: string };
+    console.error("[cron/check] unhandled failure:", {
+      name: e?.name,
+      message: e?.message,
+      stack: e?.stack,
+      raw: err,
+    });
+    return NextResponse.json({ error: "internal error", detail: e?.message ?? String(err) }, { status: 500 });
+  }
+}
+
+async function runCheck() {
   webpush.setVapidDetails(
     process.env.VAPID_SUBJECT!,
     process.env.VAPID_PUBLIC_KEY!,
@@ -122,6 +141,16 @@ export async function GET(req: Request) {
           const statusCode = (err as { statusCode?: number })?.statusCode;
           if (statusCode === 404 || statusCode === 410) {
             deadEndpoints.add(sub.endpoint);
+          } else {
+            // 죽은 구독이 아닌 다른 이유로 발송이 실패한 것 — 조용히
+            // 삼키지 않고 남겨서, 발송 자체가 늦어지거나 실패하는 원인을
+            // 나중에 로그로 추적할 수 있게 한다.
+            console.error("[cron/check] webpush send failed:", {
+              tag: item.tag,
+              statusCode,
+              message: (err as { message?: string })?.message,
+              endpointTail: sub.endpoint.slice(-12),
+            });
           }
         }
       })
