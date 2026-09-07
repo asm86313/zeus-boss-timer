@@ -29,6 +29,7 @@ self.addEventListener("push", (event) => {
     badge: "/icons/badge-mono.png", // 상단 상태바용 — 안드로이드가 알파값만 써서 무조건 흰색 실루엣으로 그림
     tag: payload.tag || "zeus-boss",
     renotify: true,
+    silent: false, // 커스텀 사운드 파일 지정은 웹푸시 표준에 없음 — 기기/브라우저 기본 알림음에 맡기되, 무음은 아니라고 명시
     vibrate: [200, 100, 200],
     data: { url: payload.url || "/" },
   };
