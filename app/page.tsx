@@ -506,7 +506,9 @@ function BossCard({
               {fmtAbs(next)} · {notifyOn ? `${fmtLeads(leads)} 알림` : "알림 꺼짐"}
             </div>
           </div>
-          <div className="boss-countdown">{next ? fmtCountdown(next.getTime() - now.getTime()) : "-"}</div>
+          <div className="boss-countdown">
+            {!next ? "-" : next.getTime() - now.getTime() <= 0 ? "출현중" : fmtCountdown(next.getTime() - now.getTime())}
+          </div>
         </div>
         <div
           className="swipe-action-btn notify"
