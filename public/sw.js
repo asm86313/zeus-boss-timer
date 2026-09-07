@@ -25,8 +25,8 @@ self.addEventListener("push", (event) => {
 
   const options = {
     body: payload.body,
-    icon: "/icons/icon-192.png",
-    badge: "/icons/icon-192.png",
+    icon: "/icons/icon-192.png", // 알림 펼쳤을 때 보이는 큰(컬러) 아이콘
+    badge: "/icons/badge-mono.png", // 상단 상태바용 — 안드로이드가 알파값만 써서 무조건 흰색 실루엣으로 그림
     tag: payload.tag || "zeus-boss",
     renotify: true,
     vibrate: [200, 100, 200],

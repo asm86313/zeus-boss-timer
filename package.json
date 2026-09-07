@@ -9,6 +9,7 @@
     "lint": "next lint",
     "make-icons": "node scripts/make-icons.mjs",
     "make-icons-from-photo": "node scripts/make-icons-from-photo.mjs",
+    "gen-badge": "node scripts/gen-badge.mjs",
     "gen-vapid": "node scripts/gen-vapid.mjs"
   },
   "dependencies": {
