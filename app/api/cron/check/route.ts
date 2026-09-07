@@ -136,7 +136,13 @@ async function runCheck() {
     await Promise.all(
       subs.map(async (sub) => {
         try {
-          await webpush.sendNotification({ endpoint: sub.endpoint, keys: sub.keys }, payload);
+          // urgency: "high"는 안드로이드/FCM에게 "배터리 절약 모드로 묶어서
+          // 나중에 몰아 보내지 말고 지금 바로 전달해달라"는 힌트다. 기본값
+          // 이면 화면이 꺼져있거나 최근에 안 쓴 폰에서 몇 분씩 늦게 뜰 수
+          // 있는데, PC는 이런 제약이 거의 없어서 정확히 오는 것과 대비됨.
+          await webpush.sendNotification({ endpoint: sub.endpoint, keys: sub.keys }, payload, {
+            urgency: "high",
+          });
         } catch (err: unknown) {
           const statusCode = (err as { statusCode?: number })?.statusCode;
           if (statusCode === 404 || statusCode === 410) {
