@@ -164,10 +164,15 @@ export default function Home() {
     }
   }
 
+  // 보스가 뜨는 순간 곧바로 다음 주기(예: 8시간) 전체를 다시 카운트하기
+  // 시작하면 "방금 떴는데 벌써 8시간 남았다"고 보여서 어색하다. 1분 전
+  // 시점을 기준으로 다음 시각을 계산해서, 뜬 직후 1분간은 00:00:00으로
+  // 멈춰 있다가 그 뒤에야 다음 주기 카운트가 시작되게 한다.
   const sorted = useMemo(() => {
     if (!data) return [];
+    const displayFrom = new Date(now.getTime() - 60_000);
     return data.bosses
-      .map((boss) => ({ boss, next: nextOccurrence(boss, now) }))
+      .map((boss) => ({ boss, next: nextOccurrence(boss, displayFrom) }))
       .sort((a, b) => {
         if (!a.next && !b.next) return a.boss.name.localeCompare(b.boss.name);
         if (!a.next) return 1;
