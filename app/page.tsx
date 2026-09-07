@@ -276,9 +276,12 @@ function CatchModal({
   const [agoMinutes, setAgoMinutes] = useState(0); // 0 = 지금
   const [untilText, setUntilText] = useState("");
 
+  // 초를 0으로 뭉개지 않는다 — "지금"이면 진짜 지금(초 단위까지) 기준으로
+  // 480분 등 주기를 카운트해야지, 이번 분의 00초로 내려버리면 매번 최대
+  // 59초씩 일찍 당겨진 채로 저장된다.
   const killedAt = useMemo(() => {
     const d = new Date();
-    d.setMinutes(d.getMinutes() - agoMinutes, 0, 0);
+    d.setMinutes(d.getMinutes() - agoMinutes);
     return d;
   }, [agoMinutes]);
 
@@ -305,7 +308,11 @@ function CatchModal({
 
   function handleConfirm(e: React.FormEvent) {
     e.preventDefault();
-    onConfirm(killedAt);
+    // 확인을 누르는 바로 그 순간의 초까지 반영해서 다시 계산 — 모달을
+    // 띄워놓고 시간이 좀 지난 뒤에 확인을 눌러도 오차 없이 정확하게.
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - agoMinutes);
+    onConfirm(d);
   }
 
   const pad = (n: number) => String(n).padStart(2, "0");
