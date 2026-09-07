@@ -68,6 +68,46 @@ export default function Home() {
     return () => clearInterval(t);
   }, []);
 
+  // 앱을 실제로 켜놓고 보고 있을 때만 되는 보너스 기능: 브라우저 내장
+  // 음성합성(TTS)으로 "보스이름 N분 전"을 소리내어 읽어준다. 웹 푸시는
+  // 커스텀 사운드 파일을 지정하는 기능 자체가 없어서, 이건 그 대안으로
+  // 앱이 열려있는 동안에만 동작하는 별도 채널이다(닫혀있으면 당연히 안
+  // 울림 — 그건 여전히 기본 알림음이 나는 푸시가 담당).
+  const spokenRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!data) return;
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    const lookback = new Date(now.getTime() - 3 * 60_000);
+    for (const boss of data.bosses) {
+      if (boss.notifyEnabled === false) continue;
+      const next = nextOccurrence(boss, lookback);
+      if (!next) continue;
+      const occKey = next.toISOString();
+      for (const lead of effectiveLeads(boss, data.settings.defaultLeads)) {
+        const triggerAt = next.getTime() - lead * 60000;
+        const spokenKey = `${boss.id}:${lead}:${occKey}`;
+        if (now.getTime() >= triggerAt && !spokenRef.current.has(spokenKey)) {
+          spokenRef.current.add(spokenKey);
+          const actualMinutesLeft = Math.round((next.getTime() - now.getTime()) / 60000);
+          const label = actualMinutesLeft > 0 ? `${actualMinutesLeft}분 전` : "등장";
+          try {
+            const utter = new SpeechSynthesisUtterance(`${boss.name} ${label}`);
+            utter.lang = "ko-KR";
+            window.speechSynthesis.speak(utter);
+          } catch {
+            // 음성합성 미지원/차단 등은 조용히 무시 — 기본 알림음은 별개로 정상 동작함
+          }
+        }
+      }
+    }
+
+    // 세션이 오래 지속돼도 안 쌓이게 이틀 지난 항목은 정리
+    if (spokenRef.current.size > 200) {
+      spokenRef.current = new Set([...spokenRef.current].slice(-100));
+    }
+  }, [data, now]);
+
   // 보스 추가/수정 모달이 열려있는 동안만 히스토리 1개를 쌓아서, 뒤로가기를
   // 누르면 앱이 꺼지는 대신 모달만 닫히게 한다. 모달이 버튼(저장/취소)으로
   // 닫힌 경우엔 쌓아뒀던 히스토리를 다시 back()으로 정리해 남기지 않는다.
